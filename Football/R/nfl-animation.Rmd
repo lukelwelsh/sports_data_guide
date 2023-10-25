@@ -1,0 +1,95 @@
+---
+title: "Animating NFL Plays"
+author: "Luke Welsh"
+date: "10/24/2023"
+output: html_document
+---
+
+# This Notebook will consist of a guide for animating sports data.
+For this example, we will be working with data from the 2024 NFL Big Data Bowl, which recently opened!
+
+You can find the submissions from last year's finalists [here](https://operations.nfl.com/gameday/analytics/big-data-bowl/2023-big-data-bowl-finalists/)
+
+**Downloading the Data:** 
+1. To get started with the data, you must first create a Kaggle account and join the competition [here](https://www.kaggle.com/competitions/nfl-big-data-bowl-2024/data). The download button will be all the way at the bottom of the page on the right. Another option if you want to do this all from the command line would be through Kaggle's API, in which you can download with the following command: ```kaggle competitions download -c nfl-big-data-bowl-2024```
+2. This will download the data as a zip file. To unzip, start by navigating in your file explorer to wherever you downloaded the zip file, then double-click the file.     
+    - If you are working on Mac, this will unzip/extract the file, or use the unzip function in the Terminal
+    - If you are working in Windows, you will have to click "Extract All" towards the top of the file explorer.
+<br><br>
+3. This will create a new folder in the same directory, within which all of the files will be unzipped.
+
+You are now ready to get started working with the data!
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+week_1 <- read.csv("nfl-big-data-bowl-2024/tracking_week_1.csv")
+head(week_1)
+```
+
+```{r}
+play <- week_1 %>%
+  filter(gameId == 2022091112) %>%
+  filter(playId == 1613)
+play[103:112,]
+```
+
+# Plotting
+To start with plotting, we will first make a stationary plot for a single frame of a play. From there, we can make it into an animation!
+
+So, we will get the background field as well as a scatter plot of the players.
+
+I will be using sportyR to plot the field here, more documentation can be found on their [GitHub](https://github.com/sportsdataverse/sportyR)
+
+```{r, warning=F}
+# install.packages("sportyR") # run this line if you don't have sportyR installed
+library(sportyR)
+geom_football(????) # need to specify which league (lowercase)
+```
+
+#### Now, if we want to add in the players as dots, we can do so by adding on the geom_point function and specifying how to plot on our axes!
+
+```{r}
+geom_football("nfl") +
+  geom_point(data=play, aes(????, ????))
+```
+
+#### Something that we will notice is that the points are not centered on the field. This is because the coordinate systems are off.
+Our data has (0, 0) being the bottom left of the left endzone, whereas the field defaults to (0, 0) at the very middle of the field.
+We can fix this with the x_trans and y_trans arguments when we create our field plot
+
+We know that the field is measured in yards (as described in the docs) and the data source for big data bowl explains: 
+- x: Player position along the long axis of the field, 0 - 120 yards. See Figure 1 below. (numeric)
+- y: Player position along the short axis of the field, 0 - 53.3 yards. See Figure 1 below. (numeric)
+
+```{r, echo=F}
+length <- 120
+width <- 53.3
+
+geom_football("nfl", x_trans=????, y_trans=????) +
+  geom_point(data=play, aes(x, y))
+```
+
+
+# Animation
+
+For animating the play, we will be using the [gganimation](https://gganimate.com/) package. With this package, we can add the transition time function to our pre-existing graph object, and we just need to specify which variable each frame is dependent on.
+
+
+```{r, echo=F, warning=F}
+library(gganimate)
+
+geom_football("nfl", x_trans = ????, y_trans = ????) +
+  geom_point(data=play, aes(????, ????)) + 
+  transition_time(????)
+```
+
+How does it look? If you stuck with the play I left you, check that it makes sense with the real [footage](https://www.youtube.com/watch?v=Na3ZMuKjBwk)
+
+### The job is not done! Our plot still has a lot that can be improved. A couple ideas you can try to fix:
+- have to dots match the speed of the game by specifying the frames per second
+- smooth out the movement of the players with some additional gganimate features
+- color code the points by team and highlight the ball
+- get rid of all of the extra space on the sidelines, we will never have any data points too far out so it is just wasted space
+- zoom in on the play so it is easier to see (these last 2 will need you to look into the sportyR package and build off of what they have to draw out a new field)
+- maybe mess around with the sizes of dots to highlight the fastest players
+- Anything else you think might make it easier to view and look better!
